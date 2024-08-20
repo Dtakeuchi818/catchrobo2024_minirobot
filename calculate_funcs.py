@@ -42,16 +42,19 @@ def solve_fk(
         shere_area_x, robot_area_point, team_color,
         theta1_range, theta2_range
 ):
+    # 関節角度動作範囲外にならないかチェック
     check_theta(
         theta, theta1_range, theta2_range
     )
 
+    # 順運動学の計算
     theta1, theta2 = theta[0], theta[1]
     theta12 = theta1 + theta2
     x = l1 * np.cos(theta1) + l2 * np.cos(theta12)
     y = l1 * np.sin(theta1) + l2 * np.sin(theta12)
     position = np.array([x, y])
 
+    # 動作禁止領域に入らないかチェック
     check_position(
         position, shere_area_x, robot_area_point, team_color
     )
@@ -64,19 +67,23 @@ def solve_ik(
         shere_area_x, robot_area_point, team_color,
         theta1_range, theta2_range,
 ):
+    # 動作禁止領域に入らないかチェック
     check_position(
         position, shere_area_x, robot_area_point, team_color
     )
 
+    # theta2（第2関節角度）の計算
     x, y = position[0], position[1]
+    cos2 = (x ** 2 + y ** 2 - l1 ** 2 - l2 * 2) / (2 * l1 * l2)
     try:
-        cos2 = (x ** 2 + y ** 2 - l1 ** 2 - l2 * 2) / (2 * l1 * l2)
+        theta2 = np.arccos(cos2) if not theta2_reverse else -np.arccos(cos2)
     except ValueError:
         print(f'座標: {position} は到達不可能な座標です')
         raise
-    theta2 = np.arccos(cos2) if not theta2_reverse else -np.arccos(cos2)
-    sin2 = np.sin(theta2)
+    else:
+        sin2 = np.sin(theta2)
 
+    # theta1（第1関節角度）の計算
     k1 = l2 * sin2
     k2 = l1 + l2 * cos2
     sin1 = -k1 * x + k2 * y
@@ -84,6 +91,7 @@ def solve_ik(
     theta1 = np.arctan2(sin1, cos1)
 
     theta = np.array([theta1, theta2])
+    # 関節角度動作範囲外にならないかチェック
     check_theta(
         theta, theta1_range, theta2_range
     )

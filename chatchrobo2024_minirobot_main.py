@@ -11,6 +11,7 @@ import calculate_funcs as calf
 
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
+# =========== PS4コントローラ初期化
 TEAM_COLOR = 'blue'
 if TEAM_COLOR == 'blue':
     from blue_settings import *
@@ -18,6 +19,7 @@ if TEAM_COLOR == 'blue':
 joystick = utils.init_ps4_controler()
 print('PS4コントローラの初期化が完了しました')
 
+# =========== Dynamixel初期化・ロボットの初期化
 print('-' * 8)
 print(f'現在、{TEAM_COLOR} モードで起動しています')
 print('PSボタンを押すとロボットが起動します')
@@ -42,6 +44,7 @@ current_theta = HOME_THETA
 current_pos = HOME_POS
 print('ロボットの起動が完了しました')
 
+# =========== ロボット操作開始
 print('-' * 8)
 print('PSボタンを押すとロボットの操作を開始します')
 utils.wait_until_psbutton_pressed(joystick)
@@ -54,47 +57,82 @@ lspb_final_goal_pos, lspb_final_goal_theta = None, None
 workspace_trajection, two_steps_trajection = None, None
 while True:
     pg.event.pump()
+    current_theta2_reverse = current_theta[1] < 0
 
-    if joystick.get_button(BUTTON_WORKSPACE_TRIGER):
+    if joystick.get_button(BUTTON_WORKSPACE_TRIGER) or joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER):
+        # あらかじめ設定された定点から、各ボタンに割り振られた目標座標と関節角度を選択する
         work_area_thetas = WORK_AREA_THETAS_HAND_UP if hand_up else WORK_AREA_THETAS_HAND_DOWN
-        if joystick.get_button(BUTTON_PW1):
+        shooting_area_thetas = SHOOTING_AREA_THETAS_HAND_UP if hand_up else SHOOTING_AREA_THETAS_HAND_DOWN
+
+        # ワークスペース上の定点を選択する
+        if joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_button(BUTTON_P1):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[0]
                 lspb_goal_pos = WORK_AREA_POINTS[0]
-        elif joystick.get_buttons(BUTTON_PW2):
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_buttons(BUTTON_P2):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[1]
                 lspb_goal_pos = WORK_AREA_POINTS[1]
-        elif joystick.get_buttons(BUTTON_PW3):
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_buttons(BUTTON_P3):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[2]
                 lspb_goal_pos = WORK_AREA_POINTS[2]
-        elif joystick.get_buttons(BUTTON_PW4):
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_buttons(BUTTON_P4):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[3]
                 lspb_goal_pos = WORK_AREA_POINTS[3]
-        elif joystick.get_hat(0)[BUTTON_PW5[0]] == BUTTON_PW5[1]:
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_hat(0)[BUTTON_P5[0]] == BUTTON_P5[1]:
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[4]
                 lspb_goal_pos = WORK_AREA_POINTS[4]
-        elif joystick.get_hat(0)[BUTTON_PW6[0]] == BUTTON_PW6[1]:
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_hat(0)[BUTTON_P6[0]] == BUTTON_P6[1]:
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[5]
                 lspb_goal_pos = WORK_AREA_POINTS[5]
-        elif joystick.get_hat(0)[BUTTON_PW7[0]] == BUTTON_PW7[1]:
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_hat(0)[BUTTON_P7[0]] == BUTTON_P7[1]:
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[6]
                 lspb_goal_pos = WORK_AREA_POINTS[6]
-        elif joystick.get_hat(0)[BUTTON_PW8[0]] == BUTTON_PW8[1]:
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_hat(0)[BUTTON_P8[0]] == BUTTON_P8[1]:
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[7]
                 lspb_goal_pos = WORK_AREA_POINTS[7]
+
+        # シューティングエリア上の定点を選択する
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_button(BUTTON_P1):
+            if lspb_goal_theta is None:
+                lspb_goal_theta = shooting_area_thetas[0]
+                lspb_goal_pos = SHOOTING_AREA_POINTS[0]
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_buttons(BUTTON_P2):
+            if lspb_goal_theta is None:
+                lspb_goal_theta = shooting_area_thetas[1]
+                lspb_goal_pos = SHOOTING_AREA_POINTS[1]
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_buttons(BUTTON_P3):
+            if lspb_goal_theta is None:
+                lspb_goal_theta = shooting_area_thetas[2]
+                lspb_goal_pos = SHOOTING_AREA_POINTS[2]
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_buttons(BUTTON_P4):
+            if lspb_goal_theta is None:
+                lspb_goal_theta = shooting_area_thetas[3]
+                lspb_goal_pos = SHOOTING_AREA_POINTS[3]
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_hat(0)[BUTTON_P5[0]] == BUTTON_P5[1]:
+            if lspb_goal_theta is None:
+                lspb_goal_theta = shooting_area_thetas[4]
+                lspb_goal_pos = SHOOTING_AREA_POINTS[4]
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_hat(0)[BUTTON_P6[0]] == BUTTON_P6[1]:
+            if lspb_goal_theta is None:
+                lspb_goal_theta = shooting_area_thetas[5]
+                lspb_goal_pos = SHOOTING_AREA_POINTS[5]
+        
+        # TRIGER_BUTTON以外は押されていない場合、何もしない
         else:
             clock.tick(FPS)
             continue
         
+        # 現在の座標と関節角度を保存する
         if lspb_start_theta is None:
             lspb_start_theta = current_theta
+            lspb_start_pos = current_pos
 
         # どの軌跡を用いるかを決定する
         if (lspb_goal_pos is not None) and (workspace_trajection is None):
@@ -104,25 +142,32 @@ while True:
             )
 
         # ２段階軌跡を用いる場合、目的座標を軌跡切り替わり点の座標に変更する
+        # 同時に、本来の目標座標を保存しておく
         if two_steps_trajection and (lspb_final_goal_pos is None):
             lspb_final_goal_pos = lspb_goal_pos
             lspb_final_goal_theta = lspb_goal_theta
             lspb_goal_pos = TRAJECTION_CHANGE_POINT
             lspb_goal_theta = TRAJECTION_CHANGE_THETA_HAND_UP if hand_up else TRAJECTION_CHANGE_THETA_HAND_DOWN
 
+        # 作業空間上の直線軌跡を計算する
         if workspace_trajection:
             try:
                 goal_theta, goal_pos = calf.workspace_lspb(
                     lspb_start_pos, lspb_goal_pos, time,
                     ACC_TIME, MOVE_TIME, MAX_VEL, MAX_ACC,
-                    L1, L2, WORK_AREA_THETA2_REVERSE,
+                    L1, L2, current_theta2_reverse,
                     SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
                     THETA1_RANGE, THETA2_RANGE,
                 )
+
+            # 動作禁止エリアに侵入 or 関節角度が範囲外などの場合、無視する
             except ValueError:
                 clock.tick(FPS)
                 continue
+
+            # 目標座標に到達した場合
             except RuntimeError:
+                # ２段階軌跡を用いる場合、２段階目の軌跡に移行する
                 if two_steps_trajection:
                     time = 0.0
                     lspb_start_pos = TRAJECTION_CHANGE_POINT
@@ -131,8 +176,44 @@ while True:
                     lspb_goal_theta = lspb_final_goal_theta
                     workspace_trajection = not workspace_trajection
                     two_steps_trajection = False
+
                 clock.tick(FPS)
                 continue
+
+        # 関節角度上の直線軌跡を計算する
+        else:
+            try:
+                goal_theta, goal_pos = calf.jointspace_lspb(
+                    lspb_start_theta, lspb_goal_theta, time,
+                    ACC_TIME, MOVE_TIME, MAX_VEL, MAX_ACC,
+                    L1, L2,
+                    SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
+                    THETA1_RANGE, THETA2_RANGE,
+                )
+
+            # 関節角度が範囲外などの場合、無視する
+            except ValueError:
+                clock.tick(FPS)
+                continue
+
+            # 目標座標に到達した場合
+            except RuntimeError:
+                # ２段階軌跡を用いる場合、２段階目の軌跡に移行する
+                if two_steps_trajection:
+                    time = 0.0
+                    lspb_start_pos = TRAJECTION_CHANGE_POINT
+                    lspb_start_theta = TRAJECTION_CHANGE_THETA_HAND_UP if hand_up else TRAJECTION_CHANGE_THETA_HAND_DOWN
+                    lspb_goal_pos = lspb_final_goal_pos
+                    lspb_goal_theta = lspb_final_goal_theta
+                    workspace_trajection = not workspace_trajection
+                    two_steps_trajection = False
+
+                clock.tick(FPS)
+                continue
+
+        # 時刻を更新する
+        time += 1 / FPS
+
 
         
 

@@ -66,7 +66,7 @@ WORK_AREA_THETAS_HAND_DOWN = [
         THETA1_RANGE, THETA2_RANGE,
     ) for position in WORK_AREA_POINTS
 ]
-SHOOTING_AREA_THETAS = [
+SHOOTING_AREA_THETAS_HAND_UP = [
     calf.solve_ik(
         position,
         L1, L2_HAND_UP, not WORK_AREA_THETA2_REVERSE,
@@ -74,5 +74,12 @@ SHOOTING_AREA_THETAS = [
         THETA1_RANGE, THETA2_RANGE,
     ) for position in SHOOTING_AREA_POINTS
 ]
-
+SHOOTING_AREA_THETAS_HAND_DOWN = [
+    calf.solve_ik(
+        position,
+        L1, L2_HAND_DOWN, not WORK_AREA_THETA2_REVERSE,
+        SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
+        THETA1_RANGE, THETA2_RANGE,
+    ) for position in SHOOTING_AREA_POINTS
+]
 
