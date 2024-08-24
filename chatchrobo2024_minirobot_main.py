@@ -57,27 +57,40 @@ lspb_final_goal_pos, lspb_final_goal_theta = None, None
 workspace_trajection, two_steps_trajection = None, None
 while True:
     pg.event.pump()
+
     current_theta2_reverse = current_theta[1] < 0
 
+    # 定点移動モード
     if joystick.get_button(BUTTON_WORKSPACE_TRIGER) or joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER):
         # あらかじめ設定された定点から、各ボタンに割り振られた目標座標と関節角度を選択する
         work_area_thetas = WORK_AREA_THETAS_HAND_UP if hand_up else WORK_AREA_THETAS_HAND_DOWN
         shooting_area_thetas = SHOOTING_AREA_THETAS_HAND_UP if hand_up else SHOOTING_AREA_THETAS_HAND_DOWN
+
+        # # シューティングエリアへ移動する場合、手先を上げる
+        # if joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and not hand_up:
+        #     hand_up = True
+        #     current_pos, L2 = dxlf.hand_updown(
+        #         hand_dxl, hand_up,
+        #         THETA_HAND_UP, THETA_HAND_DOWN, DXL_MAX_POS_VALUE,
+        #         HOME_THETA, L1, L2_HAND_UP, L2_HAND_DOWN,
+        #         SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
+        #         THETA1_RANGE, THETA2_RANGE
+        #     )
 
         # ワークスペース上の定点を選択する
         if joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_button(BUTTON_P1):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[0]
                 lspb_goal_pos = WORK_AREA_POINTS[0]
-        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_buttons(BUTTON_P2):
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_button(BUTTON_P2):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[1]
                 lspb_goal_pos = WORK_AREA_POINTS[1]
-        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_buttons(BUTTON_P3):
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_button(BUTTON_P3):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[2]
                 lspb_goal_pos = WORK_AREA_POINTS[2]
-        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_buttons(BUTTON_P4):
+        elif joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_button(BUTTON_P4):
             if lspb_goal_theta is None:
                 lspb_goal_theta = work_area_thetas[3]
                 lspb_goal_pos = WORK_AREA_POINTS[3]
@@ -103,15 +116,15 @@ while True:
             if lspb_goal_theta is None:
                 lspb_goal_theta = shooting_area_thetas[0]
                 lspb_goal_pos = SHOOTING_AREA_POINTS[0]
-        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_buttons(BUTTON_P2):
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_button(BUTTON_P2):
             if lspb_goal_theta is None:
                 lspb_goal_theta = shooting_area_thetas[1]
                 lspb_goal_pos = SHOOTING_AREA_POINTS[1]
-        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_buttons(BUTTON_P3):
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_button(BUTTON_P3):
             if lspb_goal_theta is None:
                 lspb_goal_theta = shooting_area_thetas[2]
                 lspb_goal_pos = SHOOTING_AREA_POINTS[2]
-        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_buttons(BUTTON_P4):
+        elif joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and joystick.get_button(BUTTON_P4):
             if lspb_goal_theta is None:
                 lspb_goal_theta = shooting_area_thetas[3]
                 lspb_goal_pos = SHOOTING_AREA_POINTS[3]
@@ -213,6 +226,74 @@ while True:
 
         # 時刻を更新する
         time += 1 / FPS
+
+        current_pos = goal_pos
+        current_theta = goal_theta
+        dxlf.rotate_joint_dxls(
+            joint_dxls, goal_theta, DXL_MAX_POS_VALUE
+        )
+        print(current_pos, current_theta)
+
+        clock.tick(FPS)
+
+    # Joystick操作モード
+    else:
+        # パラメータ初期化
+        time = 0.0
+        lspb_start_theta, lspb_goal_theta = None, None
+        lspb_start_pos, lspb_goal_pos = None, None
+        lspb_final_goal_pos, lspb_final_goal_theta = None, None
+        workspace_trajection, two_steps_trajection = None, None
+
+        # 速度（スティック傾き→指令値の変換倍率）の設定
+        mapping_ratio = (joystick.get_axis(AXIS_SPEED_ADJUST) + 1) * 5 + 3
+        axis_values = np.array([
+            -joystick.get_axis(axis_num) * mapping_ratio for axis_num in (
+                AXIS_X, AXIS_Y,
+            )
+        ])
+        goal_pos = current_pos + axis_values
+
+        try:
+            goal_theta = calf.solve_ik(
+                goal_pos,
+                L1, L2, current_theta2_reverse,
+                SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
+                THETA1_RANGE, THETA2_RANGE,
+            )
+        except ValueError:
+            clock.tick(FPS)
+            continue
+
+        current_pos = goal_pos
+        current_theta = goal_theta
+        dxlf.rotate_joint_dxls(
+            joint_dxls, goal_theta, DXL_MAX_POS_VALUE
+        )
+
+        # 手先の上げ下げ
+        if joystick.get_button(BUTTON_HANDS_UP) and not hand_up:
+            hand_up = True
+            current_pos, L2 = dxlf.hand_updown(
+                hand_dxl, hand_up,
+                THETA_HAND_UP, THETA_HAND_DOWN, DXL_MAX_POS_VALUE,
+                HOME_THETA, L1, L2_HAND_UP, L2_HAND_DOWN,
+                SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
+                THETA1_RANGE, THETA2_RANGE
+            )
+        if joystick.get_button(BUTTON_HANDS_DOWN) and hand_up:
+            hand_up = False
+            current_pos, L2 = dxlf.hand_updown(
+                hand_dxl, hand_up,
+                THETA_HAND_UP, THETA_HAND_DOWN, DXL_MAX_POS_VALUE,
+                HOME_THETA, L1, L2_HAND_UP, L2_HAND_DOWN,
+                SHERE_AREA_X, ROBOT_AREA_POINT, TEAM_COLOR,
+                THETA1_RANGE, THETA2_RANGE
+            )
+            
+        print(current_pos, current_theta)
+
+        clock.tick(FPS)
 
 
         
