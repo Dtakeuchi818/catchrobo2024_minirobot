@@ -7,10 +7,10 @@ import calculate_funcs as calf
 TEAM_COLOR = 'blue'
 WORK_AREA_THETA2_REVERSE = False
 
-THETA1_RANGE = np.radians(np.array((-130, 40)))
+THETA1_RANGE = np.radians(np.array((-160, 50)))
 
 ROBOT_AREA_POINT = np.array((165, -135))
-TRAJECTION_TYPE_SEPARATE_POINT = np.array((0, -5))
+TRAJECTION_TYPE_SEPARATE_POINT = np.array((100, -5))
 TRAJECTION_CHANGE_POINT = np.array((303.75, -355.0))
 TRAJECTION_CHANGE_THETA_HAND_UP = calf.solve_ik(
     TRAJECTION_CHANGE_POINT,
@@ -83,3 +83,5 @@ SHOOTING_AREA_THETAS_HAND_DOWN = [
     ) for position in SHOOTING_AREA_POINTS
 ]
 
+for t in WORK_AREA_THETAS_HAND_DOWN:
+    print(np.degrees(t))

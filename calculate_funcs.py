@@ -74,7 +74,7 @@ def solve_ik(
 
     # theta2（第2関節角度）の計算
     x, y = position[0], position[1]
-    cos2 = (x ** 2 + y ** 2 - l1 ** 2 - l2 * 2) / (2 * l1 * l2)
+    cos2 = (x ** 2 + y ** 2 - l1 ** 2 - l2 ** 2) / (2 * l1 * l2)
     try:
         theta2 = np.arccos(cos2) if not theta2_reverse else -np.arccos(cos2)
     except ValueError:
@@ -127,6 +127,8 @@ def decide_trajection_type(
                 trajection_area.append('A')
             else:
                 trajection_area.append('B')
+
+    print(trajection_area)
 
     if trajection_area[0] == trajection_area[1]:
         workspace_trajection = True

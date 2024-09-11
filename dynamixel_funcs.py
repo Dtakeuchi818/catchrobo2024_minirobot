@@ -1,7 +1,9 @@
 import sys
 import math
+import time
 
 import numpy as np
+
 from dynamixel_sdk import *
 
 import calculate_funcs as calf
@@ -15,6 +17,7 @@ class Dynamixel():
             packet_handler,
             addr_torque_enable=64,
             addr_goal_position=116,
+            addr_present_position=132,
             addr_plofile_velocity=112,
             addr_plofile_acceleration=108,
             torque_enable=1,
@@ -25,6 +28,7 @@ class Dynamixel():
         self.packet_handler = packet_handler
         self.addr_torque_enable = addr_torque_enable
         self.addr_goal_position = addr_goal_position
+        self.addr_present_position = addr_present_position
         self.addr_plofile_velocity = addr_plofile_velocity
         self.addr_plofile_acceleration = addr_plofile_acceleration
         self.torque_enable = torque_enable
@@ -37,7 +41,7 @@ class Dynamixel():
         )
         if dxl_comm_result != COMM_SUCCESS or dxl_error != 0:
             print(f'Error! ID{self.id}のトルクをONにできませんでした')
-            sys.exit()
+            raise RuntimeError
 
     def torque_off(self):
         dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(
@@ -74,6 +78,16 @@ class Dynamixel():
             print("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
             print("%s" % self.packet_handler.getRxPacketError(dxl_error))
+
+    def read_position(self):
+        position, dxl_comm_result, dxl_error = self.packet_handler.read4ByteTxRx(
+            self.port_handler, self.id, self.addr_present_position,
+        )
+        if dxl_comm_result != COMM_SUCCESS or dxl_error != 0:
+            print(f'Error! ID{self.id}のPresent Positionを読み取れませんでした')
+            sys.exit()
+        
+        return position
 
 
 def dxl_connection_setup(
@@ -112,9 +126,20 @@ def dynamixels_setup(
     ]
     hand_dxl = Dynamixel(3, port_handler, packet_handler)
     dxls = joint_dxls + [hand_dxl]
+    #dxls = [hand_dxl]
 
     for dxl in dxls:
-        dxl.torque_on()
+        i = 1
+        while True:
+            try:
+                print(f'try: {i}')
+                dxl.torque_on()
+            except RuntimeError:
+                i += 1
+                time.sleep(0.1)
+                continue
+            else:
+                break
         dxl.set_profile(vel_profile, acc_profile)
 
     return joint_dxls, hand_dxl
@@ -126,6 +151,12 @@ def calc_dxl_pos_from_theta(theta, dxl_max_pos):
     return dxl_pos
 
 
+def calc_theta_from_dxl_pos(dxl_pos, dxl_max_pos):
+    dxl_pos -= dxl_max_pos // 2
+    theta = dxl_pos * 2 * np.pi / dxl_max_pos
+    return theta
+
+
 def rotate_joint_dxls(joint_dxls, goal_theta, dxl_max_pos):
     goal_pos = calc_dxl_pos_from_theta(goal_theta, dxl_max_pos)
     for dxl, pos in zip(joint_dxls, goal_pos):
@@ -133,6 +164,14 @@ def rotate_joint_dxls(joint_dxls, goal_theta, dxl_max_pos):
 
 
 def hand_updown(
+        hand_dxl, hand_up,
+        dxl_pos_hand_up, dxl_pos_hand_down,
+):
+    dxl_pos = dxl_pos_hand_up if hand_up else dxl_pos_hand_down
+    hand_dxl.rotate(dxl_pos)
+
+
+def hand_updown_(
         hand_dxl, hand_up,
         theta_hand_up, theta_hand_down, dxl_max_pos,
         current_theta, l1, l2_hand_up, l2_hand_down,
