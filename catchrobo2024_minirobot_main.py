@@ -107,6 +107,14 @@ while True:
 
     # ------ 定点移動モード ------
     if joystick.get_button(BUTTON_WORKSPACE_TRIGER) or joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER):
+        # シューティングエリア泳動する場合、手先を上げる
+        if joystick.get_button(BUTTON_SHOOTINGAREA_TRIGER) and not hand_up:
+            hand_up = True
+            dxlf.hand_updown(
+                hand_dxl, hand_up,
+                DXL_POS_HAND_UP, DXL_POS_HAND_DOWN,
+            )
+
         # ワークスペース上の定点を選択する
         if joystick.get_button(BUTTON_WORKSPACE_TRIGER) and joystick.get_button(BUTTON_P1):
             if lspb_goal_pos is None and lspb_start_pos is None:

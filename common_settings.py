@@ -23,7 +23,7 @@ L_HAND = 137.04
 
 THETA2_RANGE = np.radians(np.array([0, 170]))
 THETA_HAND_UP = np.radians(0)
-THETA_HAND_DOWN = np.radians(90)
+THETA_HAND_DOWN = np.radians(60)
 DXL_POS_HAND_UP = dxlf.calc_dxl_pos_from_theta(THETA_HAND_UP, DXL_MAX_POS_VALUE)
 DXL_POS_HAND_DOWN = dxlf.calc_dxl_pos_from_theta(THETA_HAND_DOWN, DXL_MAX_POS_VALUE)
 L2_HAND_UP = L2 + L_HAND * np.cos(THETA_HAND_UP)
